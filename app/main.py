@@ -64,3 +64,19 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     db.delete(task)
     db.commit() # Guardamos la eliminación en disco
     return {"message": "Task deleted"}
+@app.put("/tasks/{task_id}", response_model=TaskResponse)
+def update_task(task_id: int, task: TaskCreate, db: Session = Depends(get_db)):
+    # 1. Busca la tarea en la base de datos
+    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    
+    if db_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # 2. Reemplaza los datos viejos con los nuevos
+    db_task.title = task.title
+    db_task.description = task.description
+    
+    # 3. Guarda los cambios permanentemente
+    db.commit()
+    db.refresh(db_task)
+    return db_task
